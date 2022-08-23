@@ -23,7 +23,7 @@ verify_data(Data) ->
      {ok, PubKey} = file:read_file("pub.pem"),
      {ok, Base64Sign} = file:read_file("sig.txt"),
      %% 将签名的base64编码解码
-     Sign = base64:;decode(Base64Sign),
+     Sign = base64:decode(Base64Sign),
      %% 获取RSA public key
      PemEntries = public_key:pem_decode(PubKey),
      RSAPubKey = public_key:pem_entry_decode(hd(PemEntries)),
