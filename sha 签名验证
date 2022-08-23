@@ -1,0 +1,33 @@
+在erlang 通过 public_key 模块进行 SHA1 的签名验证(谷歌订单验证会用到)
+
+公钥保存在pub.pem文件中，其中内容如下：
+
+-----BEGIN PUBLIC KEY-----
+WID/+Hni1BXwbX1VfUJxDgUEOVyL+jqUsUnOHZEx2cUfzKisNUFNrMEyhM+4Pyq7
+x8ekqFxQc5LDPkWmuSB4dCMK6yy+zTXub7SSKRuHke/MLXwn8Nf7DrsCgYEAwQ/2
+A0FsE9GsDrOOEjGa0OuomiOf+0SegEhVUDkUe/rS4eDrBPu50j9pnWOxp/fSBs7/
+8xJxg1ro/IKqnUQbAoBI780H2hlN/l0pzmHkh7Kd87zbOcH0o52SZvkifyzBrHKr
+vx3uf+2Fa2o5VasL4r/aOiAAz2NvU95A8xLXIm0CgYAwEi9buOn6uGiYE9Z4Nla6
+-----END PUBLIC KEY-----
+
+生成的sign保存在文件sig.txt中，其内容如下：
+
+g3QAAAACZAAEdGVzdGsABHRldHRrAAFhYQE=
+
+
+%% verify_sign(Data) -> true | false
+%% Data - list
+verify_data(Data) ->
+     %% 读取公钥和签名，
+     %% 读取的PubKey和Base64Sign都是binary类型
+     {ok, PubKey} = file:read_file("pub.pem"),
+     {ok, Base64Sign} = file:read_file("sig.txt"),
+     %% 将签名的base64编码解码
+     Sign = base64:;decode(Base64Sign),
+     %% 获取RSA public key
+     PemEntries = public_key:pem_decode(PubKey),
+     RSAPubKey = public_key:pem_entry_decode(hd(PemEntries)),
+     %% 验证签名
+     public_key:verify(list_to_binary(Data), 'sha', Sign, RASPubKey).
+
+
