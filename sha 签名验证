@@ -10,7 +10,7 @@ A0FsE9GsDrOOEjGa0OuomiOf+0SegEhVUDkUe/rS4eDrBPu50j9pnWOxp/fSBs7/
 vx3uf+2Fa2o5VasL4r/aOiAAz2NvU95A8xLXIm0CgYAwEi9buOn6uGiYE9Z4Nla6
 -----END PUBLIC KEY-----
 
-生成的sign保存在文件sig.txt中，其内容如下：
+生成的sign保存在文件sign.txt中，其内容如下：
 
 g3QAAAACZAAEdGVzdGsABHRldHRrAAFhYQE=
 
@@ -21,13 +21,13 @@ verify_data(Data) ->
      %% 读取公钥和签名，
      %% 读取的PubKey和Base64Sign都是binary类型
      {ok, PubKey} = file:read_file("pub.pem"),
-     {ok, Base64Sign} = file:read_file("sig.txt"),
+     {ok, Base64Sign} = file:read_file("sign.txt"),
      %% 将签名的base64编码解码
      Sign = base64:decode(Base64Sign),
      %% 获取RSA public key
      PemEntries = public_key:pem_decode(PubKey),
-     RSAPubKey = public_key:pem_entry_decode(hd(PemEntries)),
+     RSAPublicKey = public_key:pem_entry_decode(hd(PemEntries)),
      %% 验证签名
-     public_key:verify(list_to_binary(Data), 'sha', Sign, RASPubKey).
+     public_key:verify(list_to_binary(Data), 'sha', Sign, RSAPublicKey).
 
 
