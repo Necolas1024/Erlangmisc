@@ -1,0 +1,62 @@
+最近写了个SSL 服务器 ,然后发现 每次热更 acceptor 模块,都会导致 ssl:transport_accept(LSocket) 无效了 ,
+ acceptor 模块 是个gen_server,关键代码如下 :
+ 
+ async_accept(LSocket)	->
+ 	  Pid = spawn(?MODULE,accept_loop,[LSocket]),
+	  {ok, Pid}.
+  
+  accept_loop(LSocket)	->
+	  Data = ssl:transport_accept(LSocket),
+	
+	  case Data of
+		  {ok, Socket}	->
+ 			  ssl_misc:spawn_socket_controller(Socket), % 在其他模块,启动一个Socket进程
+			  accept_loop(LSocket);
+ 		  _	->
+%%			这里记录异常
+			  timer:sleep(10000),
+			  accept_loop(LSocket)
+ 	  end .
+
+经过调试发现,只要连热更两次这个 acceptor 模块 后 就会导致 accept_loop 这个进程被kill 掉.所以就不再监听了.
+修改后的代码 :
+
+handle_info({'DOWN',Ref,process,_Pid,_Status}, State = #state{ref=Ref}) ->
+ %% 收到 进程关闭的消息
+	accept(State);
+  
+  
+accept(State = #state{sock=LSocket}) ->
+    case  async_accept(LSocket) of
+      {ok, Ref} ->
+          {noreply, State#state{ref=Ref}};
+      Error     ->
+          ?LOGERROR2("LSock =~p,Err = ~p",[LSocket,Error]),
+          timer:sleep(10000),
+          accept(State)
+    end.
+  
+async_accept(LSocket)	->
+ 	  Pid = spawn(?MODULE,accept_loop,[LSocket]),
+	  MonitorRef = erlang:monitor(process, Pid), % 增加进程监控
+	  {ok, MonitorRef}.
+    
+    
+    
+accept_loop(LSocket)	->
+    Data = ssl:transport_accept(LSocket),
+
+    case Data of
+      {ok, Socket}	->
+          ssl_misc:spawn_socket_controller(Socket), % 在其他模块,启动一个Socket进程
+          accept_loop(LSocket);
+      _	->
+  %%			这里记录异常
+          timer:sleep(10000),
+          accept_loop(LSocket)
+    end .
+
+
+再怎么热更都不会有影响了. 
+
+
